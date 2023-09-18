@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class GitHubServiceImpl implements GitHubService {
@@ -32,22 +33,19 @@ public class GitHubServiceImpl implements GitHubService {
     }
 
     private String getUrl(String language, int page, int perPage, String createdSince) {
-        String url = githubApiUrl + "/search/repositories?q=";
-        StringBuilder urlBuilder = new StringBuilder(url);
-        if (createdSince != null && !createdSince.isEmpty()) {
-            urlBuilder.append("created:").append(createdSince);
-        }
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(githubApiUrl)
+            .path("/search/repositories")
+            .queryParam("sort", "stars")
+            .queryParam("order", "desc")
+            .queryParam("page", page)
+            .queryParam("per_page", perPage);
 
-        if (language != null && !language.isEmpty()) {
-            if (urlBuilder.length() > url.length()) {
-                urlBuilder.append('+');
-            }
-            urlBuilder.append("language:").append(language);
+        if (createdSince != null && !createdSince.isEmpty()) {
+            builder.queryParam("q", "created:" + createdSince);
         }
-        return urlBuilder
-            .append("&sort=stars&order=desc")
-            .append("&page=").append(page)
-            .append("&per_page=").append(perPage)
-            .toString();
+        if (language != null && !language.isEmpty()) {
+            builder.queryParam("q", "language:" + language);
+        }
+        return builder.build().toUriString();
     }
 }
